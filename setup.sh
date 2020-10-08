@@ -11,6 +11,11 @@ driver_filename="raspivoicehat_"$driver_version".tar.gz"
 dtoverlay=""
 file_config="/boot/config.txt"
 
+# Install required
+function install_required(){
+	pip3 install Adafruit-Blinka adafruit-circuitpython-bitbangio adafruit-circuitpython-busdevice apa102-pi
+}
+
 # Get kernel version
 function get_kernel_version(){
 	kernel_version=$(uname -r)
@@ -26,7 +31,7 @@ function get_driver_installed(){
 
 # Get kernel version
 function get_driver_enabled(){
-	driver_in_config="cat /boot/config.txt | grep dtoverlay=raspivoicehat" 
+	driver_in_config='cat /boot/config.txt | grep dtoverlay=raspivoicehat'
 	if [ -n "$driver_in_config" ]; then
 		driver_enabled=true
 	fi
@@ -72,7 +77,7 @@ function driver_disable(){
 
 # Run demo_run
 function demo_run(){
-	python3 examples/demo.py
+	python3 examples/runcolorcycle_blinkt.py
 }
 
 # Reboot prompt
