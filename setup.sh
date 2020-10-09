@@ -11,7 +11,7 @@ driver_filename="raspivoicehat_"$driver_version".tar.gz"
 dtoverlay=""
 file_config="/boot/config.txt"
 
-SOFTWARE_LIST="git python3-pip"
+SOFTWARE_LIST="git python3-pip libportaudio2"
 
 # Install required
 function install_sys_required(){
@@ -38,6 +38,10 @@ function install_python_required(){
 	SOFT=$(pip3 search apa102-pi | grep "INSTALLED")
 	if [ -z "$SOFT" ]; then
 		pip3 install apa102-pi
+	fi
+	SOFT=$(pip3 search pyaudio | grep "INSTALLED")
+	if [ -z "$SOFT" ]; then
+		pip3 install pyaudio
 	fi
 }
 
@@ -227,7 +231,14 @@ function menu_demo(){
 			python3 examples/runcolorcycle_blinkt.py
 			;;
 			3)
+			echo ""
 			echo "Record and Play"
+			echo ""
+			echo "Press top button to record a voice,release to play the voice"
+			echo ""
+			echo "Break demo with Ctrl + C"
+			echo ""
+			python3 examples/recordandplay.py
 			menu_demo
 			;;
 			"E")
