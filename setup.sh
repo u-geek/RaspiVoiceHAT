@@ -3,17 +3,42 @@
 TITLE="AOIDE RaspiVoiceHAT setup tools"
 BACKTITLE="UGEEK WORKSHOP [ ugeek.aliexpress.com | ukonline2000.taobao.com ]"
 driver_version="5.4.51"
-driver_installed=false
-driver_enabled=false
+driver_installed="no"
+driver_enabled="no"
 firmware_hash="390477bf6dc80dddfafcd3682b4e026e96cfc4d7"
 
 driver_filename="raspivoicehat_"$driver_version".tar.gz"
 dtoverlay=""
 file_config="/boot/config.txt"
 
+SOFTWARE_LIST="git python3-pip"
+
 # Install required
-function install_required(){
-	pip3 install Adafruit-Blinka adafruit-circuitpython-bitbangio adafruit-circuitpython-busdevice apa102-pi
+function install_sys_required(){
+	SOFT=$(dpkg -l $SOFTWARE_LIST | grep "<none>")
+	if [ -n "$SOFT" ]; then
+		apt update
+		apt -y install $SOFTWARE_LIST
+	fi
+}
+
+function install_python_required(){
+	SOFT=$(pip3 search Adafruit-Blinka | grep "INSTALLED")
+	if [ -z "$SOFT" ]; then
+		pip3 install Adafruit-Blinka
+	fi
+	SOFT=$(pip3 search adafruit-circuitpython-bitbangio | grep "INSTALLED")
+	if [ -z "$SOFT" ]; then
+		pip3 install adafruit-circuitpython-bitbangio
+	fi
+	SOFT=$(pip3 search adafruit-circuitpython-busdevice | grep "INSTALLED")
+	if [ -z "$SOFT" ]; then
+		pip3 install adafruit-circuitpython-busdevice
+	fi
+	SOFT=$(pip3 search apa102-pi | grep "INSTALLED")
+	if [ -z "$SOFT" ]; then
+		pip3 install apa102-pi
+	fi
 }
 
 # Get kernel version
@@ -24,16 +49,21 @@ function get_kernel_version(){
 
 # Get Driver installed
 function get_driver_installed(){
+	#echo "/lib/modules/$kernel_version+/kernel/sound/soc/bcm/snd-soc-wm8960-soundcard.ko"
 	if [ -f "/lib/modules/$kernel_version+/kernel/sound/soc/bcm/snd-soc-wm8960-soundcard.ko" ]; then
-		driver_installed=true
+		driver_installed="yes"
+	else
+		driver_installed="no"
 	fi
 }
 
 # Get kernel version
 function get_driver_enabled(){
-	driver_in_config='cat /boot/config.txt | grep dtoverlay=raspivoicehat'
+	driver_in_config=$(cat /boot/config.txt | grep dtoverlay=raspivoicehat)
 	if [ -n "$driver_in_config" ]; then
-		driver_enabled=true
+		driver_enabled="yes"
+	else
+		driver_enabled="no"
 	fi
 }
 
@@ -48,6 +78,17 @@ function kernel_install(){
 	UPDATE_SELF=0 SKIP_BACKUP=1 rpi-update $firmware_hash
 }
 
+function driver_uninstall(){
+	rm /lib/modules/$kernel_version+/kernel/sound/soc/bcm/snd-soc-wm8960-soundcard.ko
+	rm /lib/modules/$kernel_version+/kernel/sound/soc/codecs/snd-soc-wm8960.ko
+	rm /lib/modules/$kernel_version-v7+/kernel/sound/soc/bcm/snd-soc-wm8960-soundcard.ko
+	rm /lib/modules/$kernel_version-v7+/kernel/sound/soc/codecs/snd-soc-wm8960.ko
+	rm /lib/modules/$kernel_version-v7l+/kernel/sound/soc/bcm/snd-soc-wm8960-soundcard.ko
+	rm /lib/modules/$kernel_version-v7l+/kernel/sound/soc/codecs/snd-soc-wm8960.ko
+	rm /lib/modules/$kernel_version-v8+/kernel/sound/soc/bcm/snd-soc-wm8960-soundcard.ko
+	rm /lib/modules/$kernel_version-v8+/kernel/sound/soc/codecs/snd-soc-wm8960.ko
+}
+
 # Install driver
 function driver_install(){
 	cp drivers/$driver_filename /
@@ -58,21 +99,23 @@ function driver_install(){
 
 # Deploy driver
 function deploy_driver(){
+	echo "Deploy modules."
 	depmod -b / -a $driver_version+
 	depmod -b / -a $driver_version-v7+
 	depmod -b / -a $driver_version-v7l+
 	depmod -b / -a $driver_version-v8+
 }
 
-# Enable driver
-function driver_enable(){
-	sed -i 'raspivoicehat/d' $file_config
-	echo "dtoverlay=raspivoicehat" >> $file_config
-}
-
 # Disable driver
 function driver_disable(){
-	sed -i 'raspivoicehat/d' $file_config
+	sed -i '/^dtparam=audio=on/d' $file_config
+	sed -i '/^dtoverlay=raspivoicehat/d' $file_config
+}
+
+# Enable driver
+function driver_enable(){
+	driver_disable
+	echo "dtoverlay=raspivoicehat" >> $file_config
 }
 
 # Run demo_run
@@ -82,18 +125,115 @@ function demo_run(){
 
 # Reboot prompt
 function reboot_prompt(){
-	if [ -z "$1" ]; then
-		return
-	fi
 	if (whiptail --title "$TITLE" \
 	--backtitle "$BACKTITLE" \
 	--yes-button "Reboot" --no-button "NO" \
-	--yesno "Reboot system to apply" 10 60) then
+	--yesno "Reboot system to apply settings?" 10 60) then
 		sync
 		reboot
 	else
 		return
 	fi
+}
+
+function get_driver_status(){
+	get_kernel_version
+	echo "Kernel version:$kernel_version"
+	get_driver_installed
+	echo "Driver installed:$driver_installed"
+	get_driver_enabled
+	echo "Driver enabled:$driver_enabled"
+}
+
+function menu_main(){
+	OPTION=$(whiptail --title "$TITLE($driver_version)" \
+		--menu "RaspiVoiceHAT Config Tool." \
+		--backtitle "$BACKTITLE" \
+		--cancel-button "Exit" 18 60 10 \
+		"1" "Install Driver" \
+		"2" "Remove Driver" \
+		"3" "Demo" \
+		"E" "Exit" \
+		3>&1 1>&2 2>&3)
+		case $OPTION in
+			1)
+			get_driver_status
+			if [ "$driver_version" != "$kernel_version" ]; then
+				echo "Update kernel $driver_version now"
+				kernel_install
+			else 
+				echo "Skip kernel update."
+			fi
+			if [ "$driver_installed" == "yes" ] ; then
+				echo "Skip driver install."
+			else
+				echo "Driver isn't installed,enabled it now."
+				driver_install
+				deploy_driver
+			fi
+			if [ "$driver_enabled" == "yes" ]; then
+				echo "Skip driver enable."
+			else
+				driver_enable
+				echo "Enable driver in $file_config."
+			fi
+			echo "Reboot prompt."
+			reboot_prompt
+			;;
+			2)
+			get_driver_status
+			if [ "$driver_installed" == "yes" ]; then
+				echo "Remove drivers."
+				driver_uninstall
+				deploy_driver
+			fi
+			echo "Disable driver."
+			if [ "$driver_enabled" == "yes" ]; then
+				echo "Disable driver."
+				driver_disable
+			fi
+			echo "Reboot prompt."
+			reboot_prompt
+			;;
+			3)
+			menu_demo
+			;;
+			"E")
+			echo "Exit config tool."
+			exit 1
+			;;
+		esac
+}
+
+function menu_demo(){
+	OPTION=$(whiptail --title "$TITLE($driver_version)" \
+		--menu "RaspiVoiceHAT Config Tool." \
+		--backtitle "$BACKTITLE" \
+		--cancel-button "Exit" 18 60 10 \
+		"1" "Install required packages" \
+		"2" "LED ColorCycle" \
+		"3" "Record and Play" \
+		"E" "Exit" \
+		3>&1 1>&2 2>&3)
+		case $OPTION in
+			1)
+			echo "Check and install systemd required packages"
+			install_sys_required
+			install_python_required
+			menu_demo
+			;;
+			2)
+			echo "LED ColorCycle"
+			python3 examples/runcolorcycle_blinkt.py
+			;;
+			3)
+			echo "Record and Play"
+			menu_demo
+			;;
+			"E")
+			menu_main
+			;;
+		esac
 }
 
 # Check privileges
@@ -103,47 +243,11 @@ if [ $UID -ne 0 ]; then
     exit 1
 fi
 
-# Get kernel version
-get_kernel_version
-get_driver_installed
-get_driver_enabled
+get_driver_status
 
 # Main loop
 while true
 do
-	OPTION=$(whiptail --title "$TITLE(V$driver_version)" \
-	--menu "RaspiVoiceHAT Config Tool." \
-	--backtitle "$BACKTITLE" \
-	--cancel-button "Exit" 18 60 10 \
-	"1" "Install Driver"
-	"2" "Remove Driver" \
-	"3" "Demo" \
-	"E" "Exit" \
-	3>&1 1>&2 2>&3)
-	case $OPTION in
-		1)
-		if [ "$driver_version" != "$kernel_version" ]; then
-			kernel_install
-		fi
-		if [ ! $driver_enabled ] ; then
-			driver_install
-			deploy_driver
-		fi
-		if [ ! $driver_enabled ]; then
-			driver_enable
-		fi
-		reboot_prompt
-		;;
-		2)
-		driver_disable
-		reboot_prompt
-		;;
-		3)
-		demo_run
-		;;
-		"E")
-		exit 1
-		;;
-	esac
+	menu_main
 done
 
