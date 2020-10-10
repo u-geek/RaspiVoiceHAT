@@ -63,11 +63,6 @@ class led_thread (threading.Thread):
         print ("Exit thread:" + self.name)
 
 
-
-AUDIO_FILE = './audio/16k.pcm'  # 只支�?pcm/wav/amr 格式，极速版额外支持m4a 格式
-FORMAT = AUDIO_FILE[-3:]  # 文件后缀只支�?pcm/wav/amr 格式，极速版额外支持m4a 格式
-
-CUID = '123456PYTHON'
 RATE = 16000
 
 card = pyaudio.PyAudio()
