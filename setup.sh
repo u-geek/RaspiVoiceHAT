@@ -15,34 +15,12 @@ SOFTWARE_LIST="git python3-pip libportaudio2"
 
 # Install required
 function install_sys_required(){
-	SOFT=$(dpkg -l $SOFTWARE_LIST | grep "<none>")
-	if [ -n "$SOFT" ]; then
-		apt update
-		apt -y install $SOFTWARE_LIST
-	fi
+	apt update
+	apt -y install $SOFTWARE_LIST
 }
 
 function install_python_required(){
-	SOFT=$(pip3 search Adafruit-Blinka | grep "INSTALLED")
-	if [ -z "$SOFT" ]; then
-		pip3 install Adafruit-Blinka
-	fi
-	SOFT=$(pip3 search adafruit-circuitpython-bitbangio | grep "INSTALLED")
-	if [ -z "$SOFT" ]; then
-		pip3 install adafruit-circuitpython-bitbangio
-	fi
-	SOFT=$(pip3 search adafruit-circuitpython-busdevice | grep "INSTALLED")
-	if [ -z "$SOFT" ]; then
-		pip3 install adafruit-circuitpython-busdevice
-	fi
-	SOFT=$(pip3 search apa102-pi | grep "INSTALLED")
-	if [ -z "$SOFT" ]; then
-		pip3 install apa102-pi
-	fi
-	SOFT=$(pip3 search pyaudio | grep "INSTALLED")
-	if [ -z "$SOFT" ]; then
-		pip3 install pyaudio
-	fi
+	pip3 install Adafruit-Blinka adafruit-circuitpython-bitbangio adafruit-circuitpython-busdevice apa102-pi pyaudio
 }
 
 # Get kernel version
@@ -229,6 +207,7 @@ function menu_demo(){
 			2)
 			echo "LED ColorCycle"
 			python3 examples/runcolorcycle_blinkt.py
+			menu_demo
 			;;
 			3)
 			echo ""
