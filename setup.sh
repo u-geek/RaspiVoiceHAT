@@ -134,7 +134,9 @@ function menu_main(){
 		--cancel-button "Exit" 18 60 10 \
 		"1" "Install Driver" \
 		"2" "Remove Driver" \
-		"3" "Demo" \
+		"3" "Settings" \
+		"4" "Reset" \
+		"5" "Demo" \
 		"E" "Exit" \
 		3>&1 1>&2 2>&3)
 		case $OPTION in
@@ -159,6 +161,8 @@ function menu_main(){
 				driver_enable
 				echo "Enable driver in $file_config."
 			fi
+			install_sys_required
+			install_python_required
 			echo "Reboot prompt."
 			reboot_prompt
 			;;
@@ -177,7 +181,15 @@ function menu_main(){
 			echo "Reboot prompt."
 			reboot_prompt
 			;;
-			3)
+            3)
+			echo "Run Alsamixer"
+			alsamixer
+			;;
+			4)
+			echo "Hardware Reset"
+			alsactl init
+			;;
+			5)
 			menu_demo
 			;;
 			"E")
@@ -192,33 +204,36 @@ function menu_demo(){
 		--menu "RaspiVoiceHAT Config Tool." \
 		--backtitle "$BACKTITLE" \
 		--cancel-button "Exit" 18 60 10 \
-		"1" "Install required packages" \
-		"2" "LED ColorCycle" \
-		"3" "Record and Play" \
-		"E" "Exit" \
+		"1" "Button Test" \
+		"2" "LED Test" \
+		"3" "Record Test" \
+		"4" "Audio Play Test" \
+		"E" "Return" \
 		3>&1 1>&2 2>&3)
 		case $OPTION in
 			1)
-			echo "Check and install systemd required packages"
-			install_sys_required
-			install_python_required
+			echo "Button Test"
+			python3 examples/buttontest.py
 			menu_demo
 			;;
 			2)
-			echo "LED ColorCycle"
+			echo "LED Test"
 			python3 examples/runcolorcycle_blinkt.py
 			menu_demo
 			;;
 			3)
-			echo ""
-			echo "Record and Play"
-			echo ""
-			echo "Press top button to record a voice,release to play the voice"
-			echo ""
-			echo "Break demo with Ctrl + C"
-			echo ""
-			python3 examples/recordandplay.py
+			echo "Record Test"
+			echo "The test will last 5 seconds"
+			echo "The recorded audio will be saved to examples/recordtest.wav"
+			echo "Start Recording..."
+			echo "Stop Recroding... Please check examples/recordtest.wav"
+			python3 examples/record.py
 			menu_demo
+			;;
+			4)
+			echo "Audio Play Test"
+			aplay examples/testaudio.wav
+            menu_demo
 			;;
 			"E")
 			menu_main
