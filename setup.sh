@@ -2,10 +2,10 @@
 
 TITLE="AOIDE RaspiVoiceHAT setup tools"
 BACKTITLE="UGEEK WORKSHOP [ ugeek.aliexpress.com | ukonline2000.taobao.com ]"
-driver_version="5.4.51"
+driver_version="5.4.72"
 driver_installed="no"
 driver_enabled="no"
-firmware_hash="390477bf6dc80dddfafcd3682b4e026e96cfc4d7"
+firmware_hash="e530832e9058ab73b0d45457aea06f0ea62a08a8"
 
 driver_filename="raspivoicehat_"$driver_version".tar.gz"
 dtoverlay=""
