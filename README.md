@@ -1,7 +1,7 @@
 # RaspiVoiceHAT
 Setup tools for AOIDE RaspiVoiceHAT
 
-git clone https://github.com/howardqiao/RaspiVoiceHAT
+git clone https://github.com/u-geek/RaspiVoiceHAT
 
 cd RaspiVoiceHAT
 
